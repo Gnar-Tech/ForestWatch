@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: forestwatch-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: forestwatch
+      POSTGRES_PASSWORD: forestwatch
+      POSTGRES_DB: forestwatch
+    ports:
+      - "5432:5432"
+    volumes:
+      - forestwatch_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forestwatch -d forestwatch"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  forestwatch_pgdata:
