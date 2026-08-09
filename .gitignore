@@ -2,3 +2,4 @@ gnarkey2-hostingerkvm1.txt
 gnarkey2-hostingerkvm1.txt.pub
 kvm1-hostinger-gnarkey.txt.pub
 *.env.vps
+backend/.env.production
