@@ -95,15 +95,25 @@ Automates: Docker DB start, emulator launch, adb reverse port forwarding, mock G
 - "Powered by GnarTechs" footer on all screens (pinned to bottom, yellow #ffffcc text on rgba(0,0,0,0.45) background, "GnarTechs" in bold italic)
 - Expo dev client builds for emulator and physical device (Note 8)
 
+### Deployed
+- **VPS:** Hostinger KVM1, Debian 12, IP `72.61.71.147`
+- **Backend API:** `http://72.61.71.147` (Nginx → port 4000, PM2 managed)
+- **Database:** PostgreSQL/PostGIS in Docker (`forestwatch-db` container)
+- **SSH:** `ssh -i ~/.ssh/forestwatch_vps root@72.61.71.147`
+- **Deploy scripts:** `vps-setup.sh`, `vps-deploy.sh`, `vps-nginx.conf` (in repo root)
+- **App location on VPS:** `/opt/forestwatch`
+- **PM2 process:** `forestwatch-api`
+- **Auto-restart:** PM2 startup configured for systemd
+
 ### In Progress
-- Deployment planning: Hostinger VPS for backend+DB, Premium hosting for website
-- Website frontend: not yet started
+- Website frontend: not yet started (will be hosted on Hostinger Premium Web Hosting)
 
 ### Deployment Plan
-- **Hostinger KVM1 VPS** — PostgreSQL/PostGIS (Docker) + Node.js backend (PM2) + Nginx reverse proxy + Let's Encrypt SSL
+- **Hostinger KVM1 VPS** (deployed) — PostgreSQL/PostGIS (Docker) + Node.js backend (PM2) + Nginx reverse proxy
 - **Hostinger Premium Web Hosting** (paid through 2029) — website frontend, domain management
 - **Domain:** API on subdomain (e.g., `api.forestwatch.org`) → VPS IP; main domain → Premium hosting
-- **Mobile app** — update `.env.production` to point to VPS API URL
+- **Mobile app** — `.env.production` updated to `http://72.61.71.147`
+- **SSL:** Let's Encrypt via Certbot (when domain is configured)
 
 ## Key Decisions
 - PostGIS kept in schema but not used in queries — can be dropped if migrating to MySQL
