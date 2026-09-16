@@ -10,8 +10,8 @@ export const dumpSitesRouter = Router();
 const num = (v: unknown) => (v === '' || v == null ? null : Number(v));
 
 /* ------------------------- Create a dump site ------------------------- */
-// Public (mobile app, anonymous reporters allowed). Multipart with `photo`.
-dumpSitesRouter.post('/', optionalAuth, upload.single('photo'), async (req: AuthedRequest, res) => {
+// Auth required — reporters must be logged in. Multipart with `photo`.
+dumpSitesRouter.post('/', requireAuth, upload.single('photo'), async (req: AuthedRequest, res) => {
   const b = req.body ?? {};
   const schema = z.object({
     title: z.string().min(1),
