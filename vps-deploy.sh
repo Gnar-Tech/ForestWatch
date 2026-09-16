@@ -41,7 +41,7 @@ npm run build
 echo "[4/6] Checking .env..."
 if [ ! -f "$APP_DIR/backend/.env" ]; then
   # Get the Docker container's IP for the DB connection
-  DB_HOST=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}} forestwatch-db 2>/dev/null || echo "localhost")
+  DB_HOST=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' forestwatch-db 2>/dev/null || echo "localhost")
   
   # Generate a random JWT secret
   JWT_SECRET=$(openssl rand -hex 32)
