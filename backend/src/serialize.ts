@@ -20,6 +20,7 @@ export function serializeDumpSite(row: any) {
     altitude: row.altitude,
     photoUrl: photoUrl(row.photo_path),
     reporterName: row.reporter_name,
+    reporterId: row.reporter_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     cleanupCount: row.cleanup_count != null ? Number(row.cleanup_count) : undefined,

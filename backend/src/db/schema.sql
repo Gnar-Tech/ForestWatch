@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS dump_sites (
   geom          geography(Point, 4326),
   photo_path    TEXT,
   reporter_name TEXT,
+  reporter_id   UUID REFERENCES volunteers(id) ON DELETE SET NULL,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -37,6 +38,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_dump_sites_client_id
   ON dump_sites (client_id) WHERE client_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_dump_sites_geom ON dump_sites USING GIST (geom);
 CREATE INDEX IF NOT EXISTS idx_dump_sites_status ON dump_sites (status);
+
+-- Migration for existing tables: add reporter_id if missing.
+ALTER TABLE dump_sites
+  ADD COLUMN IF NOT EXISTS reporter_id UUID REFERENCES volunteers(id) ON DELETE SET NULL;
 
 -- Cleanup follow-ups tied to a dump site, submitted by volunteers.
 CREATE TABLE IF NOT EXISTS cleanup_reports (

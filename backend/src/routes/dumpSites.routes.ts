@@ -11,7 +11,7 @@ const num = (v: unknown) => (v === '' || v == null ? null : Number(v));
 
 /* ------------------------- Create a dump site ------------------------- */
 // Public (mobile app, anonymous reporters allowed). Multipart with `photo`.
-dumpSitesRouter.post('/', upload.single('photo'), async (req, res) => {
+dumpSitesRouter.post('/', optionalAuth, upload.single('photo'), async (req: AuthedRequest, res) => {
   const b = req.body ?? {};
   const schema = z.object({
     title: z.string().min(1),
@@ -33,8 +33,8 @@ dumpSitesRouter.post('/', upload.single('photo'), async (req, res) => {
   const row = await queryOne(
     `INSERT INTO dump_sites
        (client_id, title, description, category, severity, status,
-        latitude, longitude, accuracy, altitude, photo_path, reporter_name)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+        latitude, longitude, accuracy, altitude, photo_path, reporter_name, reporter_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
      RETURNING *`,
     [
       b.clientId ?? null,
@@ -48,7 +48,8 @@ dumpSitesRouter.post('/', upload.single('photo'), async (req, res) => {
       num(b.accuracy),
       num(b.altitude),
       photoPath,
-      b.reporterName || null,
+      b.reporterName || req.volunteer?.name || null,
+      req.volunteer?.sub ?? null,
     ]
   );
   return res.status(201).json(serializeDumpSite(row));
@@ -82,6 +83,59 @@ dumpSitesRouter.get('/:id', async (req, res) => {
     ...serializeDumpSite(site),
     cleanups: cleanups.map(serializeCleanup),
   });
+});
+
+/* ------------------------- Update a dump site ------------------------- */
+// Only the reporter who created it can edit.
+dumpSitesRouter.patch('/:id', requireAuth, async (req: AuthedRequest, res) => {
+  const site = await queryOne(`SELECT reporter_id FROM dump_sites WHERE id = $1`, [req.params.id]);
+  if (!site) return res.status(404).json({ error: 'Not found.' });
+  if (site.reporter_id !== req.volunteer!.sub) {
+    return res.status(403).json({ error: 'You can only edit your own reports.' });
+  }
+
+  const b = req.body ?? {};
+  const schema = z.object({
+    title: z.string().min(1).optional(),
+    description: z.string().optional(),
+    category: z.string().optional(),
+    severity: z.string().optional(),
+    status: z.enum(['reported', 'in_progress', 'cleaned']).optional(),
+  });
+  const parsed = schema.safeParse(b);
+  if (!parsed.success) return res.status(400).json({ error: 'Invalid input.' });
+
+  const fields: string[] = [];
+  const values: any[] = [];
+  let idx = 1;
+  for (const [key, val] of Object.entries(parsed.data)) {
+    if (val !== undefined) {
+      fields.push(`${key} = $${idx}`);
+      values.push(val);
+      idx++;
+    }
+  }
+  if (fields.length === 0) return res.status(400).json({ error: 'Nothing to update.' });
+
+  fields.push(`updated_at = now()`);
+  values.push(req.params.id);
+  const row = await queryOne(
+    `UPDATE dump_sites SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+    values
+  );
+  return res.json(serializeDumpSite(row));
+});
+
+/* ------------------------- Delete a dump site ------------------------- */
+// Only the reporter who created it can delete.
+dumpSitesRouter.delete('/:id', requireAuth, async (req: AuthedRequest, res) => {
+  const site = await queryOne(`SELECT reporter_id FROM dump_sites WHERE id = $1`, [req.params.id]);
+  if (!site) return res.status(404).json({ error: 'Not found.' });
+  if (site.reporter_id !== req.volunteer!.sub) {
+    return res.status(403).json({ error: 'You can only delete your own reports.' });
+  }
+  await query(`DELETE FROM dump_sites WHERE id = $1`, [req.params.id]);
+  return res.json({ ok: true });
 });
 
 /* ------------------------- Update site status ------------------------- */
